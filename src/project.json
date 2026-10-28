@@ -1,0 +1,9 @@
+{
+    "name": "TalonsViewer",
+    "manufacturer": "Homebrew",
+    "cart_size": "512K",
+    "eeprom_93c46": false,
+    "eeprom_sd_save": false,
+    "sources": ["game/main.cpp", "game/models_data.cpp"],
+    "overlays": []
+}

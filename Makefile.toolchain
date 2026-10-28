@@ -1,0 +1,127 @@
+# Makefile.toolchain
+# Builds the LLVM-MOS toolchain and supporting tools from source.
+# Run this once after cloning the repository.
+
+# Detect OS for platform-specific build flags
+UNAME_S := $(shell uname -s)
+
+# Retry settings for compiler crashes
+MAX_RETRIES ?= 20
+
+# Retry wrapper for ninja builds (handles random compiler crashes)
+define run_ninja
+	@attempt=1; \
+	while [ $$attempt -le $(MAX_RETRIES) ]; do \
+		echo "=== Build attempt $$attempt of $(MAX_RETRIES) ==="; \
+		if $(1); then \
+			echo "=== Build succeeded ==="; \
+			break; \
+		fi; \
+		echo "=== Build failed (attempt $$attempt), retrying... ==="; \
+		attempt=$$((attempt + 1)); \
+		sleep 1; \
+	done; \
+	if [ $$attempt -gt $(MAX_RETRIES) ]; then \
+		echo "=== Build failed after $(MAX_RETRIES) attempts ==="; \
+		exit 1; \
+	fi
+endef
+
+# Platform-specific flags to handle host compiler compatibility
+ifeq ($(UNAME_S),Linux)
+    # Linux: Use libc++ to avoid libstdc++ template incompatibilities with newer GCC
+    # Requires: sudo pacman -S libc++ (Arch/Manjaro) or apt install libc++-dev (Debian/Ubuntu)
+    # LLVM_ENABLE_LIBCXX adds -stdlib=libc++ internally
+    CMAKE_EXTRA_ARGS := -DLLVM_ENABLE_LIBCXX=ON
+else ifeq ($(UNAME_S),Darwin)
+    # macOS: libc++ is the default, no extra flags needed
+    CMAKE_EXTRA_ARGS :=
+else
+    # Windows (MINGW/MSYS2/Cygwin): Use system defaults
+    CMAKE_EXTRA_ARGS :=
+endif
+
+LLVM_MOS_BUILD = submodules/llvm-mos/build
+LLVM_MOS_SDK_BUILD = submodules/llvm-mos-sdk/build
+LLVM_MOS_SDK_INSTALL = submodules/llvm-mos-sdk/bin
+SDK_BIN = $(LLVM_MOS_SDK_INSTALL)/bin
+SPRPCK = submodules/sprpck/src/sprpck
+ENCRYPT_TOOLS = submodules/lynx-encryption-tools
+ZX02 = tools/zx02/build/zx02
+MAKELNX = tools/makelnx/makelnx
+
+all: toolchain
+	@echo ""
+	@echo "Toolchain build complete!"
+	@echo "You can now build the project with: python3 tools/build.py"
+
+toolchain: $(SDK_BIN)/mos-clang $(SPRPCK) $(ENCRYPT_TOOLS)/lynxenc $(ZX02) $(MAKELNX)
+
+# Build llvm-mos compiler from source (uses MOS.cmake configuration)
+$(LLVM_MOS_BUILD)/bin/clang:
+	@echo "Building llvm-mos compiler (this will take a while)..."
+	mkdir -p $(LLVM_MOS_BUILD)
+	cd $(LLVM_MOS_BUILD) && cmake -G Ninja \
+		-C ../clang/cmake/caches/MOS.cmake \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_C_COMPILER=clang \
+		-DCMAKE_CXX_COMPILER=clang++ \
+		-DCMAKE_C_FLAGS_RELEASE="-O2 -DNDEBUG" \
+		-DCMAKE_CXX_FLAGS_RELEASE="-O2 -DNDEBUG" \
+		$(CMAKE_EXTRA_ARGS) \
+		-DLLVM_ENABLE_ASSERTIONS=OFF \
+		-DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld" \
+		-DLLVM_RUNTIME_TARGETS="" \
+		-S ../llvm -B .
+	$(call run_ninja,ninja -C $(LLVM_MOS_BUILD))
+	$(call run_ninja,ninja -C $(LLVM_MOS_BUILD) llvm-mc)
+	@echo "Creating mos-clang symlinks..."
+	cd $(LLVM_MOS_BUILD)/bin && ln -sf clang mos-clang
+	cd $(LLVM_MOS_BUILD)/bin && ln -sf clang++ mos-clang++
+	cd $(LLVM_MOS_BUILD)/bin && ln -sf clang-cpp mos-clang-cpp
+
+# Build llvm-mos-sdk
+$(SDK_BIN)/mos-clang: $(LLVM_MOS_BUILD)/bin/clang
+	@echo "Building llvm-mos-sdk..."
+	mkdir -p $(LLVM_MOS_SDK_BUILD)
+	cd $(LLVM_MOS_SDK_BUILD) && cmake -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=$(abspath $(LLVM_MOS_SDK_INSTALL)) \
+		-DLLVM_MOS=$(abspath $(LLVM_MOS_BUILD)) \
+		-DLLVM_MOS_C_COMPILER=$(abspath $(LLVM_MOS_BUILD))/bin/clang \
+		-DLLVM_MOS_CXX_COMPILER=$(abspath $(LLVM_MOS_BUILD))/bin/clang++ \
+		-DLLVM_MOS_ASM_COMPILER=$(abspath $(LLVM_MOS_BUILD))/bin/clang \
+		-DLLVM_MOS_BOOTSTRAP_COMPILER=OFF \
+		-DLLVM_MOS_BUILD_EXAMPLES=OFF \
+		..
+	$(call run_ninja,ninja -C $(LLVM_MOS_SDK_BUILD) install)
+
+# Build sprpck sprite packer
+$(SPRPCK):
+	@echo "Building sprpck..."
+	$(MAKE) -C submodules/sprpck/src
+
+# Build lynx encryption tools
+$(ENCRYPT_TOOLS)/lynxenc:
+	@echo "Building lynx-encryption-tools..."
+	$(MAKE) -C $(ENCRYPT_TOOLS)
+
+# Build zx02 compressor (used for overlays)
+$(ZX02):
+	@echo "Building zx02..."
+	$(MAKE) -C tools/zx02
+
+# Build makelnx (.lyx -> .lnx)
+$(MAKELNX): tools/makelnx/Source/make_lnx.c
+	@echo "Building makelnx..."
+	$(MAKE) -C tools/makelnx
+
+# Clean all toolchain builds
+clean:
+	rm -rf $(LLVM_MOS_BUILD)
+	rm -rf $(LLVM_MOS_SDK_BUILD)
+	rm -rf $(LLVM_MOS_SDK_INSTALL)
+	$(MAKE) -C submodules/sprpck/src clean || true
+	$(MAKE) -C $(ENCRYPT_TOOLS) clean || true
+	rm -rf tools/zx02/build
+
+.PHONY: all toolchain clean

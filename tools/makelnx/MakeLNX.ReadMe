@@ -1,0 +1,49 @@
+Short:    .LYX to Atari Lynx .LNX file conversion utility
+Author:   Keith Wilkins. Amiga port by Wojciech Pasiecznik/Voy/SSG^Dial^SWAT
+Uploader: Wojciech Pasiecznik/Voy/SSG^Dial^SWAT (voydial@wp.pl)
+Version:  5
+Requires: MC68000+
+Type:     misc/emu
+
+Handy emulator only reads .LNX formats files, any will not read raw (.LYX)
+cartridge images. To convert from raw (.LYX/.040) to LNX format use
+the make_lnx utility.
+
+USAGE:  make_lnx <infile> [options]
+
+Optional arguments
+------------------
+   -o Output filename (Default=<infile>.lnx)
+   -m Manufacturer    (Default=Atari)
+   -g Game name       (Default=<infile>.lnx)
+   -r Left/Right      (Default=no screen image rotation)
+   -b0 Bank0 size     (Default=Automatic, options 0K,64K,128K,256K,512K)
+   -b1 Bank1 size     (Default=0K, options 0K,64K,128K,256K,512K)
+
+The default action (no optional params) is to convert the input filename
+from raw format to LNX format with the default options given above. Options
+can be mixed and placed in any order on the command line.
+
+Example:
+make_lnx cgames.lyx                  (Converts cgames.lyx to cgames.lnx)
+make_lnx cgames.lyx -o calgames.lnx  (Converts cgames.lyx to calgames.lnx)
+
+Part of the LNX header contains game and manufacturer information that may
+be used in later versions of Handy, you can add this into the header using
+the -g and -m options.
+
+Example:
+
+make_lnx cgames.lyx -g "California Games" -m Atari
+
+(Converts cgames.lyx to cgames.lnx and sets the internal game/manufacturer
+ fields within the LNX header. The quotes are important only if your game
+ name has spaces within it.)
+
+
+
+       <-------------------HANDY HOMEPAGE-------------------->
+                       http://www.esplexo.co.uk
+       <----------------------------------------------------->
+
+                       http://handy.sourceforge.net

@@ -1,0 +1,24 @@
+# Build outputs
+src/build/
+src/build.nin
+out/
+
+src/a.lyx
+
+# Generated files
+
+# Legacy build outputs (can be removed after transition)
+src/t.elf
+src/x.map
+src/a.o
+src/disasm-full.txt
+src/symbols.txt
+
+# Build artifacts inside submodules are hidden via `ignore = dirty` in
+# .gitmodules (a parent .gitignore cannot reach into a submodule).
+
+# Built by Makefile.toolchain
+tools/makelnx/makelnx
+
+# Python
+__pycache__/

@@ -1,0 +1,20 @@
+[submodule "submodules/llvm-mos-sdk"]
+	path = submodules/llvm-mos-sdk
+	url = https://github.com/llvm-mos/llvm-mos-sdk.git
+	ignore = dirty
+[submodule "submodules/llvm-mos"]
+	path = submodules/llvm-mos
+	url = https://github.com/llvm-mos/llvm-mos.git
+	ignore = dirty
+[submodule "submodules/sprpck"]
+	path = submodules/sprpck
+	url = https://github.com/programmerunit38416/sprpck
+	ignore = dirty
+[submodule "submodules/lynx-encryption-tools"]
+	path = submodules/lynx-encryption-tools
+	url = https://github.com/programmerunit38416/lynx-encryption-tools.git
+	ignore = dirty
+[submodule "tools/zx02"]
+	path = tools/zx02
+	url = https://github.com/dmsc/zx02
+	ignore = dirty
