@@ -228,9 +228,6 @@ def main():
     step("Stage2 loader")
     build_stage2()
 
-    step("Models")
-    run(["python3", f"{TOOLS}/gen_models.py"])
-
     step("Assets")
     run(["python3", f"{TOOLS}/process_assets.py"])
 

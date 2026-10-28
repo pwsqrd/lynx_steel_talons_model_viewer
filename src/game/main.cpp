@@ -7,10 +7,10 @@
 //
 // Every frame the model is rotated and projected, then its faces are drawn
 // in the model's order, skipping those pointing away from the camera. Like
-// the game (DRAWPOLYGONS@ in DRAWOBJ.ASM), there is no sort: the models are
-// built so that order is right. The models are triangles (tools/gen_models.py). A triangle is one sprite, or two when
-// it has to be split at its middle vertex: a literal pixel stretched to the
-// span width, with TILT following the left edge and STRETCH the width per
+// the game, there is no sort: the models are built so that order is right.
+// The models are triangles (models_data). A triangle is one sprite, or two
+// when it has to be split at its middle vertex: a literal pixel stretched to
+// the span width, with TILT following the left edge and STRETCH the width per
 // row. Each sprite is drawn as soon as it is set up, through one SCB.
 //
 // All multiplies run on the Suzy math unit in signed mode through the inline
@@ -33,7 +33,7 @@ static SCB_REHVST_PAL g_scb;
 // One literal 4bpp pixel per pen, as in sys::ClearScreenRegion.
 static u8 g_pixel[16][3];
 
-// Screen points. gen_models.py sizes the projection so the model always fits.
+// Screen points. models_data sizes the projection so the model always fits.
 static ZP u8 g_sx[MODEL_MAX_POINTS];
 static ZP u8 g_sy[MODEL_MAX_POINTS];
 
@@ -64,7 +64,7 @@ static s8 Cos(u8 angle)
 BuildMatrix
 
 Yaw turns the model about its Z (up) axis, then the camera tilts down by
-pitch. Matches the handedness of talons-build/tools/viewer.html.
+pitch.
 
 The sines are 64 = 1.0, so shifted left 2 they are matrix entries, and the
 product of two of them >> 8 is one too. The four products run on Suzy
@@ -142,7 +142,7 @@ static NOINLINE void TransformPoints(const Model& model)
 =================
 FacesCamera
 
-gen_models.py winds each triangle so (b - a) x (c - a) points along its
+Each triangle in models_data is wound so (b - a) x (c - a) points along its
 normal; through the view matrix and the y-down screen that makes a front
 face's (b - a) x (c - a) positive. Two multiplies.
 =================
